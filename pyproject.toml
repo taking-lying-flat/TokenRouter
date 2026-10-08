@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=64.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tokenrouter"
+version = "0.1.0"
+description = "A general token-level routing inference system"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "torch==2.8.0",
+    "torchao==0.9.0",
+    "transformers==4.55.2",
+    "sglang[runtime-common,openai,anthropic,torch-memory-saver,decord]==0.5.1",
+    "sgl-kernel==0.3.8",
+    "torchaudio==2.8.0",
+    "torchvision",
+    "cuda-python",
+    "flashinfer-python==0.2.11.post3",
+    "accelerate",
+    "fastapi>=0.115.12",
+    "pandas>=2.2.3",
+    "pydantic>=2.12.4",
+    "xgrammar",
+    "scikit-learn",
+    "setproctitle",
+    "gradio",
+    "nvidia-ml-py",
+    "nvtx"
+]
+
+[tool.uv]
+exclude-dependencies = [
+    "pynvml"
+]
+[project.optional-dependencies]
+train = [
+    "jieba==0.42.1", 
+    "nltk==3.9.1", 
+    "wandb"
+]
+evaluate = [
+    "psutil",
+    "packaging"
+]
+dev = [
+    "datasets>=2.20.0",
+    "PyYAML",
+    "uvicorn",
+    "openai",
+    "requests",
+    "aiohttp",
+    "tiktoken",
+    "rich"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tokenrouter"]
+exclude = ["config*"]

@@ -1,0 +1,60 @@
+model:
+  small:
+    model_path: "Qwen/Qwen3-0.6B"
+    dtype: "bfloat16"
+    param_num_billion: 0.6
+    host: "0.0.0.0"
+    port: 30000
+    tp_size: 1
+    base_gpu_id: 0
+    disable_cuda_graph: false
+    disable_radix_cache: false
+    disable_overlap_schedule: true
+    delayed_batching_threshold: 1
+    scheduler_class: "random_routing"
+    scheduler_kwargs:
+      routing_seed: 42
+      routing_probabilities:
+        small: 0.5
+        medium: 0.3
+        large: 0.2
+
+  medium:
+    model_path: "Qwen/Qwen3-8B"
+    dtype: "bfloat16"
+    param_num_billion: 8.0
+    tp_size: 1
+    base_gpu_id: 1
+    disable_cuda_graph: false
+    disable_radix_cache: false
+    disable_overlap_schedule: true
+    delayed_batching_threshold: 1
+    scheduler_class: "random_routing"
+    scheduler_kwargs:
+      routing_seed: 42
+      routing_probabilities:
+        small: 0.5
+        medium: 0.3
+        large: 0.2
+
+  large:
+    model_path: "Qwen/Qwen3-32B"
+    dtype: "bfloat16"
+    param_num_billion: 32.0
+    tp_size: 1
+    base_gpu_id: 2
+    disable_cuda_graph: false
+    disable_radix_cache: false
+    disable_overlap_schedule: true
+    delayed_batching_threshold: 1
+    scheduler_class: "random_routing"
+    scheduler_kwargs:
+      routing_seed: 42
+      routing_probabilities:
+        small: 0.5
+        medium: 0.3
+        large: 0.2
+
+system:
+  entry_model: "small"
+  mem_fraction_static: 0.90

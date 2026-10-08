@@ -1,0 +1,46 @@
+model:
+  quick:
+    # algorithms
+    model_path: "/mnt/public/public_models/Qwen3-0.6B"
+    dtype: "bfloat16"
+    param_num_billion: 0.6
+
+    # system
+    host: "0.0.0.0"
+    port: 30000
+    tp_size: 1
+    base_gpu_id: 0
+    disable_cuda_graph: false
+    disable_radix_cache: false
+    disable_overlap_schedule: false
+
+    # router
+    scheduler_class: "query_level_routing"
+    scheduler_kwargs:
+      route_to_peer: true
+
+  reference:
+    # algorithms
+    model_path: "Qwen/Qwen3-32B"
+    dtype: "bfloat16"
+    param_num_billion: 32.0
+
+    # system
+    tp_size: 2
+    base_gpu_id: 0
+    disable_cuda_graph: false
+    cuda_graph_bs: []
+    cuda_graph_bs_extend:
+      16: !range [16,64]
+    disable_radix_cache: false
+    disable_overlap_schedule: false
+    forward_mode_for_single_token: "extend"
+
+    # router
+    scheduler_class: "query_level_routing"
+    scheduler_kwargs:
+      route_to_peer: false
+
+system:
+  entry_model: "quick"
+  mem_fraction_static: 0.85

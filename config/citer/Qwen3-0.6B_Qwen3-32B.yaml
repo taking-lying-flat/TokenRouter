@@ -1,0 +1,48 @@
+model:
+  quick:
+    # algorithms
+    model_path: "Qwen/Qwen3-0.6B"
+    dtype: "bfloat16"
+    param_num_billion: 0.6
+
+    # system
+    host: "0.0.0.0"
+    port: 30000
+    tp_size: 1
+    base_gpu_id: 0
+    disable_cuda_graph: false
+    disable_radix_cache: false
+    disable_overlap_schedule: true
+
+    # router
+    scheduler_class: "citer_slm"
+    enable_return_hidden_states: true
+    force_return_hidden_states: true
+    scheduler_kwargs:
+      router_path: "nics-efc/CITER_Qwen3_0_6B_Qwen3_32B"
+      threshold: 0.98
+
+  reference:
+    # algorithms
+    model_path: "Qwen/Qwen3-32B"
+    dtype: "bfloat16"
+    param_num_billion: 32.0
+
+    # system
+    tp_size: 2
+    base_gpu_id: 0
+    disable_cuda_graph: false
+    cuda_graph_bs: []
+    cuda_graph_bs_extend:
+      16: !range [16,64]
+    disable_radix_cache: true
+    disable_overlap_schedule: true
+    forward_mode_for_single_token: "extend"
+    delayed_batching_threshold: [1,2,2,3,4,5,5,6,7,8,9,10,10,11,12,13]
+
+    # router
+    scheduler_class: "citer_llm"
+
+system:
+  entry_model: "quick"
+  mem_fraction_static: 0.85

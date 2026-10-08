@@ -1,0 +1,99 @@
+# TokenRouter builds each model's ServerArgs from SGLang's ServerArgs and the
+# extensions in `tokenrouter/server_args.py`.
+
+sglang_server_args:
+  - model_path
+  - tokenizer_path
+  - tokenizer_mode
+  - trust_remote_code
+  - context_length
+  - revision
+
+  - host
+  - port
+  - skip_server_warmup
+  - warmups
+  - nccl_port
+
+  - dtype
+
+  - max_running_requests
+  - max_queued_requests
+  - max_total_tokens
+  - chunked_prefill_size
+  - max_prefill_tokens
+  - schedule_policy
+
+  - device
+  - tp_size
+  - pp_size
+  - max_micro_batch_size
+  - random_seed
+  - base_gpu_id
+  - gpu_id_step
+
+  - log_level
+  - decode_log_interval
+
+  - api_key
+  - served_model_name
+  - chat_template
+  - completion_template
+
+  - dp_size
+  - load_balance_method
+
+  - preferred_sampling_params
+
+  - attention_backend
+  - decode_attention_backend
+  - prefill_attention_backend
+  - sampling_backend
+
+  - disable_radix_cache
+  - cuda_graph_max_bs
+  - cuda_graph_bs
+  - disable_cuda_graph
+  - disable_cuda_graph_padding
+
+tokenrouter_server_args:
+  scheduler_class:
+    type: str
+    default: BaseTokenRoutingScheduler
+    description: Scheduler registry key used by this model.
+  scheduler_kwargs:
+    type: dict
+    default: {}
+    description: Method-specific scheduler options.
+  force_return_hidden_states:
+    type: bool
+    default: false
+    description: Force model forwards to expose hidden states to the scheduler.
+  force_return_logprob:
+    type: bool
+    default: false
+    description: Force model forwards to expose logprobs to the scheduler.
+  force_return_logprobs_num:
+    type: int_or_null
+    default: null
+    description: Number of top logprobs to return when forced logprobs are enabled.
+  cuda_graph_bs_extend:
+    type: dict
+    default: {}
+    description: Extra CUDA graph batch sizes for extend/prefill paths.
+  forward_mode_for_single_token:
+    type: str
+    default: decode
+    description: Forward mode used when extending a single token.
+  param_num_billion:
+    type: float
+    default: 32.0
+    description: Model size estimate used by TokenRouting memory planning.
+  delayed_batching_threshold:
+    type: list
+    default: []
+    description: Per-batch-size delayed batching thresholds.
+  rollback_enabled:
+    type: bool
+    default: false
+    description: Enable rollback behavior for schedulers that support it.
