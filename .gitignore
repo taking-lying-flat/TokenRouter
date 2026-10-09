@@ -16,3 +16,6 @@ logs/
 *.csv
 *.pdf
 result_responses.jsonl
+
+# Keep the README logo in version control.
+!resource/logo.png

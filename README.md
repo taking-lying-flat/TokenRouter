@@ -1,33 +1,48 @@
-# TokenRouter: Efficient Serving System for Token-Level LLM Routing
+<div align="center">
+  <img src="resource/logo.png" alt="TokenRouter Logo" width="100"/>
 
-TokenRouter is an efficient and user-friendly serving system for token-level routed LLM inference. TokenRouter shifts from the conventional request-centric paradigm to a model-centric one. Instead of treating each request as a synchronized decoding stream, TokenRouter launches a subserver for each candidate LLM and dispatches requests asynchronously according to routing decisions. Each subserver employs a delayed-batching scheduler, whose hyperparameters are derived mathematically from a throughput model of the system. Across diverse routing algorithms, workloads, and model pairs, TokenRouter achieves 2.01-64.15× higher decoding throughput than existing systems.
+  <h1>TokenRouter</h1>
+  <h3>Efficient Serving System for Token-Level LLM Routing</h3>
 
-## Supported Token-level Routing Algorithms
+  <p>
+    <a href="https://fuvty.github.io/thinking_yard_project_page/projects/tokenrouter/">🌐 <b>Project Page</b></a> •
+    <a href="https://arxiv.org/abs/2610.12242">📑 <b>Paper</b></a>
+  </p>
+</div>
 
-| Method | Scheduler Classes |
-| --- | --- |
-| R2R | `r2r_slm` + `r2r_llm` |
-| CITER | `citer_slm` + `citer_llm` |
-| Co-LLM | `collm_base` + `collm_assist` |
-| R-Stitch | `rstitch_slm` + `rstitch_llm` |
-| GlimpRouter | `glimprouter_slm` + `glimprouter_llm` |
-| ME | `random_routing` on `small` + `medium` + `large` |
-| Query-level routing | `query_level_routing` |
-| Random baseline | `random_routing` |
+TokenRouter is an efficient and developer-friendly serving system for token-level LLM routing. You describe routing logic through three interfaces: `route()`, `send()`, and `receive()`, TokenRouter efficiently serves it for you.
+Across diverse routing algorithms, workloads, and model pairs, TokenRouter achieves **2.01–64.15× higher decoding throughput** than existing systems.
 
-## Installation
+Feel free to star the repo or cite the paper if you find it interesting.
+
+```bibtex
+@article{fu2026tokenrouter,
+    title={TokenRouter: Efficient Serving System for Token-Level LLM Routing},
+    author={Tianyu Fu and Tengxuan Liu and Ruoxi Wang and Yixin Dong and Yi Ge and Yichen You and Yu Wang},
+    journal={arXiv preprint arXiv:2610.12242},
+    year={2026},
+}
+```
+
+## News
+
+[2026/10] 📑 Our [paper](https://huggingface.co/papers/2610.12242) is now available on arXiv. Explore the [project page](https://fuvty.github.io/thinking_yard_project_page/projects/tokenrouter/) for interactive explanations and results.
+
+[2026/09] 🎉 Our paper is accepted by **NeurIPS 2026**!
+
+## Environment Setup
 
 ```bash
-conda create -n tokenrouter python==3.10
+conda create -n tokenrouter python=3.10
 conda activate tokenrouter
 pip install -e .
 ```
 
 ## Quick Start
 
-TokenRouting is configured through a single YAML file. Example configs are provided under [config/](config/), and runnable usage examples are provided under [examples/](examples/).
+TokenRouter is configured through a single YAML file. Example configs are provided under [config/](config/), and runnable usage examples are provided under [examples/](examples/).
 
-### Server Mode
+### Launch a TokenRouter server
 
 Launch a TokenRouter server with a routing config:
 
@@ -37,18 +52,18 @@ python -m tokenrouter.launch_server --config_path config/r2r/Qwen3-0.6B_Qwen3-32
 
 To place one model on each node, keep both model definitions in the shared
 config, add `system.peer_endpoints`, and select the model launched by each
-process:
+process. Replace `<QUICK_NODE_IP>` and `<REFERENCE_NODE_IP>` with the reachable IP addresses of the corresponding nodes
 
 ```yaml
 system:
   entry_model: quick
   peer_endpoints:
     quick:
-      bind: "tcp://0.0.0.0:30000"
-      advertise: "tcp://{$REFERENCE_IP}:30000"
+      bind: "tcp://0.0.0.0:30001"
+      advertise: "tcp://<QUICK_NODE_IP>:30001"
     reference:
-      bind: "tcp://0.0.0.0:30000"
-      advertise: "tcp://{$QUICK_IP}:30000"
+      bind: "tcp://0.0.0.0:30001"
+      advertise: "tcp://<REFERENCE_NODE_IP>:30001"
 ```
 
 ```bash
@@ -66,9 +81,22 @@ python examples/openai_chat_completion.py
 python examples/requests_chat_completion.py
 ```
 
-### Engine Mode
+### Use TokenRouter as Engine in Python
 
-Use engine mode when you want to run TokenRouter directly from Python without starting a separate HTTP server. The example below creates a `TokenRoutingEngine` from the same YAML config and calls `engine.generate()`:
+Use `TokenRoutingEngine` when you want to run TokenRouter directly from Python without starting a separate HTTP server:
+
+```python
+from tokenrouter.entrypoints.engine import TokenRoutingEngine
+
+with TokenRoutingEngine("config/r2r/Qwen3-0.6B_Qwen3-32B.yaml") as engine:
+    response = engine.generate(
+        prompt="<|im_start|>user\nSay hello in one short sentence.<|im_end|>\n<|im_start|>assistant\n",
+        sampling_params={"temperature": 0, "max_new_tokens": 256},
+    )
+    print(response["text"])
+```
+
+See [examples/engine_generate.py](examples/engine_generate.py) for a complete example:
 
 ```bash
 python examples/engine_generate.py
@@ -136,13 +164,45 @@ Use `evaluation/report.py` to summarize an existing result CSV without rerunning
 python evaluation/report.py --result ${OUTPUT_DIR}/result.csv
 ```
 
-## Implementing A New Token-level Routing Method
+## Supported Token-level Routing Algorithms
+
+| Method | Scheduler Classes |
+| --- | --- |
+| R2R | `r2r_slm` + `r2r_llm` |
+| CITER | `citer_slm` + `citer_llm` |
+| Co-LLM | `collm_base` + `collm_assist` |
+| R-Stitch | `rstitch_slm` + `rstitch_llm` |
+| GlimpRouter | `glimprouter_slm` + `glimprouter_llm` |
+| ME | `random_routing` on `small` + `medium` + `large` |
+| Query-level routing | `query_level_routing` |
+| Random baseline | `random_routing` |
+
+## Understanding the Code
+
+Code structure and instructions for adding custom routing methods.
+
+<details>
+<summary><b>Expand to see</b></summary>
+
+### Code structure
+
+- `tokenrouter/`: The main serving package.
+  - `entrypoints/`: HTTP serving, OpenAI-compatible chat completions, and the Python engine.
+  - `managers/`: Scheduling, request handoff, tokenization, and detokenization.
+  - `managers/schedulers/`: Routing schedulers and the scheduler registry.
+  - `algorithms/`: Method-specific routing logic and helpers.
+  - `model_executor/`: Model execution and CUDA graph support.
+- `config/`: YAML configurations for routing methods and supported model-level arguments.
+- `examples/`: Server clients and Python engine examples.
+- `evaluation/`: Workloads, throughput benchmarks, reporting, and delayed-batching optimization.
+
+### Implement a new token-level routing method
 
 TokenRouter represents each cooperating model with its own scheduler class. A new routing method usually adds one scheduler for each model. Every scheduler should subclass `BaseTokenRoutingScheduler`, defined in [tokenrouter/managers/schedulers/base_scheduler.py](tokenrouter/managers/schedulers/base_scheduler.py). Place scheduler classes in [tokenrouter/managers/schedulers/](tokenrouter/managers/schedulers/) and keep method-specific helper logic under [tokenrouter/algorithms/](tokenrouter/algorithms/). For each scheduler class, implement three key interfaces: `route()`, `send()`, and `receive()`.
 
-### 1. Implement `route()`
+#### 1. Implement `route()`
 
-`route(batch, result)` is called after each forward pass and must return a 1-D `torch.Tensor` with shape `(batch.batch_size(),)`. Each element corresponds to the request at the same index in `batch.reqs`.
+`route(batch, result)` is called after each forward pass and returns one decision per request: a list of model names or a 1-D `torch.Tensor` with shape `(batch.batch_size(),)`. Each element corresponds to the request at the same index in `batch.reqs`.
 
 Return one routing decision per request:
 
@@ -152,7 +212,7 @@ Return one routing decision per request:
 - For existing two-model schedulers, `True` / `1` still delegates to the
   only peer and `False` / `0` still decodes locally.
 
-### 2. Implement `send()`
+#### 2. Implement `send()`
 
 `send(req, destination)` builds the `PeerReq` message sent to an addressed
 scheduler. Use `PeerReq.construct_from_req(...)` to convert the local `Req`
@@ -173,15 +233,15 @@ req_to_send = PeerReq.construct_from_req(
 
 The default `send()` implementation uses `req.origin_input_ids + req.output_ids` as `current_token_ids`, so the peer receives the prompt plus all generated tokens currently owned by this scheduler.
 
-### 3. Implement `receive()`
+#### 3. Implement `receive()`
 
 `receive(msgs)` processes `PeerReq` messages from the peer scheduler. By default, `receive()` accepts all tokens sent by the peer. Override `receive()` when the method needs custom preprocessing before applying peer tokens.
 
-### 4. Register Scheduler
+#### 4. Register Scheduler
 
 Register the scheduler in [tokenrouter/managers/schedulers/__init__.py](tokenrouter/managers/schedulers/__init__.py) by adding it to `SCHEDULER_REGISTRY`. The registry key becomes the YAML config value for `scheduler_class`.
 
-### 5. Optimize Delayed-batching Threshold
+#### 5. Optimize Delayed-batching Threshold
 
 The delayed-batching threshold can be optimized using [evaluation/calculate_delayed_batching.py](evaluation/calculate_delayed_batching.py). For example, to optimize the delayed-batching threshold of R2R on Qwen3-0.6B and Qwen3-32B, run the following command:
 
@@ -193,6 +253,62 @@ python evaluation/calculate_delayed_batching.py \
         --delta 0.1
 ```
 
-### 6. Add Config
+#### 6. Add Config
 
 Each cooperating model is configured independently inside the YAML config. TokenRouter extends `sglang.srt.server_args.ServerArgs` with additional routing-specific fields defined in [tokenrouter/server_args.py](tokenrouter/server_args.py). All the supported model-level configuration keys are listed in [config/supported_server_args.yaml](config/supported_server_args.yaml).
+
+</details>
+
+## Related Projects
+
+Explore more efficient LLM projects from us:
+
+<table style="border: none; border-collapse: collapse;" align="center">
+<tr>
+<td align="center" valign="top" width="20%" style="border: none; border-right: 1px solid rgba(128, 128, 128, 0.3); padding: 10px; min-width: 50px;">
+<div style="height: 5em; display: flex; align-items: center; justify-content: center;">
+<a href="https://github.com/thu-nics/C2C">
+<img src="https://raw.githubusercontent.com/thu-nics/C2C/main/resource/logo.png" alt="Cache-to-Cache Logo" style="max-height: 5em; max-width: 100%; height: auto; width: auto;" />
+</a>
+</div>
+<a href="https://github.com/thu-nics/C2C"><b>C2C</b></a>
+<br/><sub>Direct communication through KV-caches</sub>
+</td>
+<td align="center" valign="top" width="20%" style="border: none; border-right: 1px solid rgba(128, 128, 128, 0.3); padding: 10px; min-width: 50px;">
+<div style="height: 5em; display: flex; align-items: center; justify-content: center;">
+<a href="https://github.com/thu-nics/R2R">
+<img src="https://raw.githubusercontent.com/thu-nics/R2R/main/resource/logo.png" alt="R2R Logo" style="max-height: 5em; max-width: 100%; height: auto; width: auto;" />
+</a>
+</div>
+<a href="https://github.com/thu-nics/R2R"><b>R2R</b></a>
+<br/><sub>Token-level routing for reasoning LLMs</sub>
+</td>
+<td align="center" valign="top" width="20%" style="border: none; border-right: 1px solid rgba(128, 128, 128, 0.3); padding: 10px; min-width: 50px;">
+<div style="height: 5em; display: flex; align-items: center; justify-content: center;">
+<a href="https://github.com/thu-nics/TaH">
+<img src="https://raw.githubusercontent.com/thu-nics/TaH/main/resource/logo.png" alt="TaH Logo" style="max-height: 5em; max-width: 100%; height: auto; width: auto;" />
+</a>
+</div>
+<a href="https://github.com/thu-nics/TaH"><b>TaH</b></a>
+<br/><sub>Selective latent thinking for reasoning LLMs</sub>
+</td>
+<td align="center" valign="top" width="20%" style="border: none; border-right: 1px solid rgba(128, 128, 128, 0.3); padding: 10px; min-width: 50px;">
+<div style="height: 5em; display: flex; align-items: center; justify-content: center;">
+<a href="https://github.com/thu-nics/FrameFusion">
+<img src="https://raw.githubusercontent.com/thu-nics/FrameFusion/main/example/image/logo.png" alt="FrameFusion Logo" style="max-height: 5em; max-width: 100%; height: auto; width: auto;" />
+</a>
+</div>
+<a href="https://github.com/thu-nics/FrameFusion"><b>FrF</b></a>
+<br/><sub>Efficient video token reduction for LVLMs</sub>
+</td>
+<td align="center" valign="top" width="20%" style="border: none; padding: 10px; min-width: 50px;">
+<div style="height: 5em; display: flex; align-items: center; justify-content: center;">
+<a href="https://github.com/thu-nics/MoA">
+<img src="https://raw.githubusercontent.com/thu-nics/MoA/master/resource/logo.png" alt="MoA Logo" style="max-height: 5em; max-width: 100%; height: auto; width: auto;" />
+</a>
+</div>
+<a href="https://github.com/thu-nics/MoA"><b>MoA</b></a>
+<br/><sub>Mixture of sparse attention for LLMs</sub>
+</td>
+</tr>
+</table>
