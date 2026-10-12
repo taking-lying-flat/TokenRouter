@@ -106,13 +106,13 @@ python examples/engine_generate.py
 
 Select one config and one workload before launching the server.
 
-| Method | Config path |
-| --- | --- |
-| R2R | [config/r2r/Qwen3-0.6B_Qwen3-32B.yaml](config/r2r/Qwen3-0.6B_Qwen3-32B.yaml) |
-| CITER | [config/citer/Qwen3-0.6B_Qwen3-32B.yaml](config/citer/Qwen3-0.6B_Qwen3-32B.yaml) |
-| Co-LLM | [config/collm/Qwen3-0.6B_Qwen3-32B.yaml](config/collm/Qwen3-0.6B_Qwen3-32B.yaml) |
-| R-Stitch | [config/rstitch/Qwen3-0.6B_Qwen3-32B.yaml](config/rstitch/Qwen3-0.6B_Qwen3-32B.yaml) |
-| ME | [config/me/Qwen3-0.6B_Qwen3-8B_Qwen3-32B.yaml](config/me/Qwen3-0.6B_Qwen3-8B_Qwen3-32B.yaml) |
+| Method | Config path | Router link |
+| --- | --- | --- |
+| R2R | [config/r2r/Qwen3-0.6B_Qwen3-32B.yaml](config/r2r/Qwen3-0.6B_Qwen3-32B.yaml) | [nics-efc/R2R_router_collections/Qwen3-0.6B+Qwen3-32B](https://huggingface.co/nics-efc/R2R_router_collections/tree/main/Qwen3-0.6B%2BQwen3-32B) |
+| CITER | [config/citer/Qwen3-0.6B_Qwen3-32B.yaml](config/citer/Qwen3-0.6B_Qwen3-32B.yaml) | [nics-efc/CITER_Qwen3_0_6B_Qwen3_32B](https://huggingface.co/nics-efc/CITER_Qwen3_0_6B_Qwen3_32B) |
+| Co-LLM | [config/collm/Qwen3-0.6B_Qwen3-32B.yaml](config/collm/Qwen3-0.6B_Qwen3-32B.yaml) | [nics-efc/CoLLM_Qwen3_0_6B](https://huggingface.co/nics-efc/CoLLM_Qwen3_0_6B) |
+| R-Stitch | [config/rstitch/Qwen3-0.6B_Qwen3-32B.yaml](config/rstitch/Qwen3-0.6B_Qwen3-32B.yaml) | -- |
+| ME | [config/me/Qwen3-0.6B_Qwen3-8B_Qwen3-32B.yaml](config/me/Qwen3-0.6B_Qwen3-8B_Qwen3-32B.yaml) | -- |
 
 | Workload | Dataset path |
 | --- | --- |
