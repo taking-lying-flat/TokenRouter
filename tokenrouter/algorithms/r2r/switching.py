@@ -192,13 +192,14 @@ class MomentumSwitching(ModelSwitchingStrategy):
         self.momentum_factor = momentum_factor
         self.quick_to_ref_threshold = quick_to_ref_threshold
         self.ref_to_quick_threshold = ref_to_quick_threshold
-        self.state.momentum = 0.0
+        self.request_states: dict[str, SwitchingState] = {}
 
-    def route(self, outputs) -> torch.Tensor:
+    def route(self, outputs, request_ids: List[str]) -> torch.Tensor:
         """
         Determine which model to use for each input in the batch.
         Args:
             outputs: Model outputs from the quick model
+            request_ids: Stable request IDs in the same order as the output batch
         Returns:
             torch.Tensor: Binary tensor of shape [batch_size] where:
                 0 = use quick model
@@ -211,23 +212,29 @@ class MomentumSwitching(ModelSwitchingStrategy):
         )
 
         for i in range(batch_size):
+            state = self.request_states.setdefault(
+                request_ids[i], SwitchingState(last_model="reference")
+            )
             aleatoric_uncertainty, _ = compute_logu(next_token_logits[i : i + 1])
             is_simple = aleatoric_uncertainty < self.aleatoric_threshold
 
             # Update momentum based on current token
-            self.state.momentum = self.momentum_factor * self.state.momentum + (
+            state.momentum = self.momentum_factor * state.momentum + (
                 1 - self.momentum_factor
             ) * (1.0 if is_simple else 0.0)
 
-            if self.state.last_model == "quick":
-                use_reference = self.state.momentum <= self.quick_to_ref_threshold
+            if state.last_model == "quick":
+                use_reference = state.momentum <= self.quick_to_ref_threshold
             else:
-                use_reference = self.state.momentum <= self.ref_to_quick_threshold
+                use_reference = state.momentum <= self.ref_to_quick_threshold
 
             model_choices[i] = 1 if use_reference else 0
-            self.state.last_model = "reference" if use_reference else "quick"
+            state.last_model = "reference" if use_reference else "quick"
 
         return model_choices
+
+    def release_request(self, request_id: str) -> None:
+        self.request_states.pop(request_id, None)
 
 
 class SingleRollingWindowSwitching(ModelSwitchingStrategy):
