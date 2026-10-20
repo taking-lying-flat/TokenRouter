@@ -66,21 +66,20 @@ class R2RSLMScheduler(BaseTokenRoutingScheduler):
             hidden_states=[hidden_states], logits=logits, token=next_token_ids[:, None]
         )
         if self.strategy_name == "momentum":
-            request_ids = [req.rid for req in batch.reqs]
-            return self.r2r_router.route(model_outputs, request_ids).cpu()
+            return self.r2r_router.route(model_outputs, [req.rid for req in batch.reqs]).cpu()
         return self.r2r_router.route(model_outputs).cpu()
 
     def _mark_terminal(self, rid: str, handoff_seq: int) -> None:
         super()._mark_terminal(rid, handoff_seq)
         if self.strategy_name == "momentum":
-            self.r2r_router.release_request(rid)
+            self.r2r_router.request_states.pop(rid, None)
 
     def abort_request(self, recv_req):
         super().abort_request(recv_req)
         if self.strategy_name == "momentum":
             for rid in list(self.r2r_router.request_states):
                 if recv_req.abort_all or rid.startswith(recv_req.rid):
-                    self.r2r_router.release_request(rid)
+                    self.r2r_router.request_states.pop(rid, None)
 
     def send(self, req: Req, destination: Optional[str] = None) -> PeerReq:
         destination = destination or self.peer_name

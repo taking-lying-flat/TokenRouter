@@ -1,6 +1,7 @@
 import random
-from collections import deque
+from collections import defaultdict, deque
 from dataclasses import dataclass
+from functools import partial
 from typing import List, Optional
 
 import torch
@@ -192,7 +193,7 @@ class MomentumSwitching(ModelSwitchingStrategy):
         self.momentum_factor = momentum_factor
         self.quick_to_ref_threshold = quick_to_ref_threshold
         self.ref_to_quick_threshold = ref_to_quick_threshold
-        self.request_states: dict[str, SwitchingState] = {}
+        self.request_states = defaultdict(partial(SwitchingState, last_model="reference"))
 
     def route(self, outputs, request_ids: List[str]) -> torch.Tensor:
         """
@@ -212,9 +213,7 @@ class MomentumSwitching(ModelSwitchingStrategy):
         )
 
         for i in range(batch_size):
-            state = self.request_states.setdefault(
-                request_ids[i], SwitchingState(last_model="reference")
-            )
+            state = self.request_states[request_ids[i]]
             aleatoric_uncertainty, _ = compute_logu(next_token_logits[i : i + 1])
             is_simple = aleatoric_uncertainty < self.aleatoric_threshold
 
@@ -232,9 +231,6 @@ class MomentumSwitching(ModelSwitchingStrategy):
             state.last_model = "reference" if use_reference else "quick"
 
         return model_choices
-
-    def release_request(self, request_id: str) -> None:
-        self.request_states.pop(request_id, None)
 
 
 class SingleRollingWindowSwitching(ModelSwitchingStrategy):
