@@ -1666,16 +1666,9 @@ class BaseTokenRoutingScheduler(Scheduler):
         self, choices, batch_size: int
     ) -> List[str]:
         if isinstance(choices, torch.Tensor):
-            if choices.ndim != 1:
-                raise ValueError(
-                    "route() must return one-dimensional decisions; "
-                    f"got tensor shape {tuple(choices.shape)}"
-                )
             choices = choices.detach().cpu().tolist()
         else:
             choices = list(choices)
-            if any(isinstance(choice, (list, tuple)) for choice in choices):
-                raise ValueError("route() must return one-dimensional decisions")
 
         if len(choices) != batch_size:
             raise ValueError(
