@@ -138,6 +138,22 @@ logger = logging.getLogger(__name__)
 class ModelRunner(SglangModelRunner):
     """ModelRunner runs the forward passes of the models."""
 
+    def sample(
+        self,
+        logits_output: LogitsProcessorOutput,
+        forward_batch: ForwardBatch,
+    ) -> torch.Tensor:
+        if self.server_args.scheduler_class not in ("rstitch_slm", "rstitch_llm"):
+            return super().sample(logits_output, forward_batch)
+
+        # SGLang sampling can overwrite logits with probabilities in-place.
+        # R-Stitch needs the original model logits for its entropy calculation.
+        routing_logits = logits_output.next_token_logits.clone()
+        try:
+            return super().sample(logits_output, forward_batch)
+        finally:
+            logits_output.next_token_logits = routing_logits
+
     def init_device_graphs(self):
         """Capture cuda graphs."""
         self.graph_runner = None
